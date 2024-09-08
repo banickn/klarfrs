@@ -15,7 +15,7 @@ pip install klarfrs
 import klarfrs
 
 content: dict = klarfrs.parse(filename)
-print(klarf)
+print(content)
 ```
 
 ## Contributing
