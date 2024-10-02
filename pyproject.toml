@@ -1,0 +1,25 @@
+[build-system]
+requires = ["maturin", "setuptools"]
+build-backend = "maturin"
+
+[project]
+name = "klarfrs"
+version = "0.1.11"
+requires-python = ">=3.9"
+   classifiers = [
+       "Programming Language :: Rust",
+       "Programming Language :: Python :: Implementation :: CPython",
+       "Programming Language :: Python :: Implementation :: PyPy",
+   ]
+authors = [
+  {name = "Norman Banick", email = "norman.banick@gmail.com"},]
+description = "Klarfrs is a parser written in Rust to read klarf files as a python dictionary. Currently it only supports version 1.2."
+readme = {file = "readme.md", content-type = "text/markdown"}
+license = {file = "LICENSE"}
+keywords = ["parser", "rust-lang", "semiconductor", "klarf", "wafers"]
+[project.urls]
+Homepage = "https://github.com/banickn/klarfrs"
+Repository = "https://github.com/banickn/klarfrs"
+
+[tool.maturin]
+exclude = [".pypirc", "tests/*"]
