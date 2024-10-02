@@ -1,57 +1,57 @@
+use pyo3::prelude::*;
+use pyo3::types::{PyDict, PyList};
+use regex::Regex;
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
-use pyo3::prelude::*;
-use pyo3::types::{PyList, PyDict};
-use regex::Regex;
 
 #[pyclass]
 #[derive(Debug, PartialEq)]
 pub struct KlarfData {
-    file_version: String, // Klarf file version.
-    file_timestamp: String, // Klarf file timestamp.
-    inspection_station_id: Vec<String>, // List of inspection station IDs.
-    sample_type: String, // Type of sample.
-    result_timestamp: String, // Timestamp of the inspection result.
-    lot_id: String, // Lot ID.
-    sample_size: Vec<u32>, // Sample size in x and y dimensions.
-    setup_id: Vec<String>, // List of setup IDs.
-    step_id: String, // Step ID.
-    wafer_id: String, // Wafer ID.
-    slot: u32, // Slot number.
-    device_id: String, // Device ID.
+    file_version: String,                 // Klarf file version.
+    file_timestamp: String,               // Klarf file timestamp.
+    inspection_station_id: Vec<String>,   // List of inspection station IDs.
+    sample_type: String,                  // Type of sample.
+    result_timestamp: String,             // Timestamp of the inspection result.
+    lot_id: String,                       // Lot ID.
+    sample_size: Vec<u32>,                // Sample size in x and y dimensions.
+    setup_id: Vec<String>,                // List of setup IDs.
+    step_id: String,                      // Step ID.
+    wafer_id: String,                     // Wafer ID.
+    slot: u32,                            // Slot number.
+    device_id: String,                    // Device ID.
     sample_orientation_mark_type: String, // Type of sample orientation mark.
-    orientation_mark_location: String, // Location of orientation mark.
-    die_pitch: Vec<f64>, // Die pitch in x and y dimensions.
-    die_origin: Vec<f64>, // Die origin in x and y coordinates.
-    sample_center_location: Vec<f64>, // Sample center location in x and y coordinates.
-    orientation_instructions: String, // Orientation instructions.
-    coordinates_mirrored: String, // Whether the coordinates are mirrored.
-    inspection_orientation: String, // Inspection orientation.
+    orientation_mark_location: String,    // Location of orientation mark.
+    die_pitch: Vec<f64>,                  // Die pitch in x and y dimensions.
+    die_origin: Vec<f64>,                 // Die origin in x and y coordinates.
+    sample_center_location: Vec<f64>,     // Sample center location in x and y coordinates.
+    orientation_instructions: String,     // Orientation instructions.
+    coordinates_mirrored: String,         // Whether the coordinates are mirrored.
+    inspection_orientation: String,       // Inspection orientation.
 }
 
 #[pyclass]
 #[derive(Debug, PartialEq)]
 pub struct DefectList {
-    defect_id: i64, // Unique identifier for the defect
-    xrel: f64, // X coordinate of the defect (relative to the wafer)
-    yrel: f64, // Y coordinate of the defect (relative to the wafer)
-    xindex: i32, // X index of the defect (related to die location on wafer)
-    yindex: i32, // Y index of the defect (related to die location on wafer)
-    xsize: f64, // Size of the defect in the X dimension
-    ysize: f64, // Size of the defect in the Y dimension
-    defect_area: f64, // Area of the defect
-    dsize: f64, // Maximum dimension of the defect
-    class_number: i32, // Defect classification number
-    test: i32, // Test condition or number
-    cluster_number: i32, // Cluster number the defect belongs to
-    rough_bin_number: i32, // Rough binning classification
-    fine_bin_number: i32, // Fine binning classification
-    review_sample: i32, // Flag indicating if the defect is a review sample
-    adc_size: f64, // Size from ADC measurement (unknown context)
-    adc_size_dn_oblique: f64, // ADC size with specific illumination (downward normal oblique)
-    adc_size_dw1_oblique: f64, // ADC size with specific illumination (downward 1 oblique)
-    adc_size_dw2_oblique: f64, // ADC size with specific illumination (downward 2 oblique)
+    defect_id: i64,                // Unique identifier for the defect
+    xrel: f64,                     // X coordinate of the defect (relative to the wafer)
+    yrel: f64,                     // Y coordinate of the defect (relative to the wafer)
+    xindex: i32,                   // X index of the defect (related to die location on wafer)
+    yindex: i32,                   // Y index of the defect (related to die location on wafer)
+    xsize: f64,                    // Size of the defect in the X dimension
+    ysize: f64,                    // Size of the defect in the Y dimension
+    defect_area: f64,              // Area of the defect
+    dsize: f64,                    // Maximum dimension of the defect
+    class_number: i32,             // Defect classification number
+    test: i32,                     // Test condition or number
+    cluster_number: i32,           // Cluster number the defect belongs to
+    rough_bin_number: i32,         // Rough binning classification
+    fine_bin_number: i32,          // Fine binning classification
+    review_sample: i32,            // Flag indicating if the defect is a review sample
+    adc_size: f64,                 // Size from ADC measurement (unknown context)
+    adc_size_dn_oblique: f64,      // ADC size with specific illumination (downward normal oblique)
+    adc_size_dw1_oblique: f64,     // ADC size with specific illumination (downward 1 oblique)
+    adc_size_dw2_oblique: f64,     // ADC size with specific illumination (downward 2 oblique)
     class_code_dn_oblique: i32, // Classification code with specific illumination (downward normal oblique)
     class_code_dw1_oblique: i32, // Classification code with specific illumination (downward 1 oblique)
     class_code_dw2_oblique: i32, // Classification code with specific illumination (downward 2 oblique)
@@ -64,145 +64,145 @@ pub struct DefectList {
     haze_average_dn_oblique: f64, // Haze average with specific illumination (downward normal oblique)
     haze_average_dw1_oblique: f64, // Haze average with specific illumination (downward 1 oblique)
     haze_average_dw2_oblique: f64, // Haze average with specific illumination (downward 2 oblique)
-    index1_dn_oblique: i32, // Index 1 with specific illumination (downward normal oblique)
-    index1_dw1_oblique: i32, // Index 1 with specific illumination (downward 1 oblique)
-    index1_dw2_oblique: i32, // Index 1 with specific illumination (downward 2 oblique)
-    index2_dn_oblique: i32, // Index 2 with specific illumination (downward normal oblique)
-    index2_dw1_oblique: i32, // Index 2 with specific illumination (downward 1 oblique)
-    index2_dw2_oblique: i32, // Index 2 with specific illumination (downward 2 oblique)
-    // lpde1: f64,
-    // lpde2: f64,
-    // lpde3: f64,
-    // lpde4: f64,
-    // lpm_haze_average_adc_dn_oblique: f64,
-    // lpm_haze_average_adc_dw1_oblique: f64,
-    // lpm_haze_average_adc_dw2_oblique: f64,
-    // lpm_max_adc: f64,
-    // lpm_max_adc_dn_oblique: f64,
-    // lpm_max_adc_dw1_oblique: f64,
-    // lpm_max_adc_dw2_oblique: f64,
-    // lpm_max_amplitude: f64,
-    // lpm_max_amplitude_dn_oblique: f64,
-    // lpm_max_amplitude_dw1_oblique: f64,
-    // lpm_max_amplitude_dw2_oblique: f64,
-    // lpm_max_amplitude_nppm: f64,
-    // lpm_max_amplitude_nppm_dn_oblique: f64,
-    // lpm_max_amplitude_nppm_dw1_oblique: f64,
-    // lpm_max_amplitude_nppm_dw2_oblique: f64,
-    // lpm_max_amplitude_rppm: f64,
-    // lpm_max_amplitude_rppm_dn_oblique: f64,
-    // lpm_max_amplitude_rppm_dw1_oblique: f64,
-    // lpm_max_amplitude_rppm_dw2_oblique: f64,
-    // lpm_max_snr: f64,
-    // lpm_max_snr_dn_oblique: f64,
-    // lpm_max_snr_dw1_oblique: f64,
-    // lpm_max_snr_dw2_oblique: f64,
-    // lpm_triggered_dn_oblique: i32,
-    // lpm_triggered_dw1_oblique: i32,
-    // lpm_triggered_dw2_oblique: i32,
-    // nppm_size: f64,
-    // nppm_size_dn_oblique: f64,
-    // nppm_size_dw1_oblique: f64,
-    // nppm_size_dw2_oblique: f64,
-    // position_r_centroid: f64,
-    // position_theta_centroid: f64,
-    // rppm_haze_average_dn_oblique: f64,
-    // rppm_haze_average_dw1_oblique: f64,
-    // rppm_haze_average_dw2_oblique: f64,
-    // rppm_size: f64,
-    // rppm_size_dn_oblique: f64,
-    // rppm_size_dw1_oblique: f64,
-    // rppm_size_dw2_oblique: f64,
-    // defect_size: f64,
-    // size_dn_oblique: f64,
-    // size_dn_oblique_to_size_dw1_oblique: f64,
-    // size_dn_oblique_to_size_dw2_oblique: f64,
-    // size_dw1_oblique: f64,
-    // size_dw1_oblique_to_size_dn_oblique: f64,
-    // size_dw1_oblique_to_size_dw2_oblique: f64,
-    // size_dw2_oblique: f64,
-    // size_dw2_oblique_to_size_dn_oblique: f64,
-    // size_dw2_oblique_to_size_dw1_oblique: f64,
-    // sn_ratio: f64,
-    // sn_ratio_dn_oblique: f64,
-    // sn_ratio_dw1_oblique: f64,
-    // sn_ratio_dw2_oblique: f64,
-    // area: f64,
-    // aspect_ratio: f64,
-    // position_box_r_end: f64,
-    // position_box_r_start: f64,
-    // position_box_theta_end: f64,
-    // position_box_theta_start: f64,
-    // length: f64,
-    // haze_average: f64,
-    // class_code: i32,
-    // column_index: i32,
-    // enc_energy: f64,
-    // index1: i32,
-    // index2: i32,
-    // lpm_haze_average_adc: f64,
-    // lpm_triggered: i32,
-    // row_index: i32,
-    // rppm_haze_average: f64,
-    // adc_size_pcc_oblique: f64,
-    // class_code_pcc_oblique: i32,
-    // column_index_pcc_oblique: i32,
-    // defect_size_neg_adc_pcc_oblique: f64,
-    // defect_size_pos_adc_pcc_oblique: f64,
-    // defect_size_she_pcc_oblique: f64,
-    // enc_energy_pcc_oblique: f64,
-    // haze_average_pcc_oblique: f64,
-    // index1_pcc_oblique: i32,
-    // index2_pcc_oblique: i32,
-    // lateral_extent_radial_neg_um_pcc_oblique: f64,
-    // lateral_extent_radial_pos_um_pcc_oblique: f64,
-    // lateral_extent_radial_um_pcc_oblique: f64,
-    // lateral_extent_tangential_neg_um_pcc_oblique: f64,
-    // lateral_extent_tangential_pos_um_pcc_oblique: f64,
-    // lateral_extent_tangential_um_pcc_oblique: f64,
-    // lpm_haze_average_adc_pcc_oblique: f64,
-    // lpm_max_adc_pcc_oblique: f64,
-    // lpm_max_amplitude_pcc_oblique: f64,
-    // lpm_max_amplitude_nppm_pcc_oblique: f64,
-    // lpm_max_amplitude_rppm_pcc_oblique: f64,
-    // lpm_max_snr_pcc_oblique: f64,
-    // lpm_triggered_pcc_oblique: i32,
-    // nppm_size_pcc_oblique: f64,
-    // pcc_adc_ratio_pcc_oblique: f64,
-    // pcc_bckgrnd_intensity_adc_pcc_oblique: f64,
-    // pcc_num_clustered_defects_pcc_oblique: i32,
-    // ppd_polarity: i32,
-    // polarity_pcc_oblique: i32,
-    // pos_and_neg_separation_radial_um_pcc_oblique: f64,
-    // pos_and_neg_separation_tangential_um_pcc_oblique: f64,
-    // rppm_haze_average_pcc_oblique: f64,
-    // rppm_size_pcc_oblique: f64,
-    // size_pcc_oblique: f64,
-    // sn_ratio_pcc_oblique: f64,
-    // xneg_pcc_oblique: f64,
-    // xpos_pcc_oblique: f64,
-    // yneg_pcc_oblique: f64,
-    // ypos_pcc_oblique: f64,
-    // defect_size_neg_adc: f64,
-    // defect_size_pos_adc: f64,
-    // defect_size_she: f64,
-    // lateral_extent_radial_neg_um: f64,
-    // lateral_extent_radial_pos_um: f64,
-    // lateral_extent_radial_um: f64,
-    // lateral_extent_tangential_neg_um: f64,
-    // lateral_extent_tangential_pos_um: f64,
-    // lateral_extent_tangential_um: f64,
-    // pcc_adc_ratio: f64,
-    // pcc_bckgrnd_intensity_adc: f64,
-    // pcc_num_clustered_defects: i32,
-    // pos_and_neg_separation_radial_um: f64,
-    // pos_and_neg_separation_tangential_um: f64,
-    // xneg: f64,
-    // xpos: f64,
-    // yneg: f64,
-    // ypos: f64,
-    // image_count: i32,
-    // image_list: String
+    index1_dn_oblique: i32,       // Index 1 with specific illumination (downward normal oblique)
+    index1_dw1_oblique: i32,      // Index 1 with specific illumination (downward 1 oblique)
+    index1_dw2_oblique: i32,      // Index 1 with specific illumination (downward 2 oblique)
+    index2_dn_oblique: i32,       // Index 2 with specific illumination (downward normal oblique)
+    index2_dw1_oblique: i32,      // Index 2 with specific illumination (downward 1 oblique)
+    index2_dw2_oblique: i32,      // Index 2 with specific illumination (downward 2 oblique)
+                                  // lpde1: f64,
+                                  // lpde2: f64,
+                                  // lpde3: f64,
+                                  // lpde4: f64,
+                                  // lpm_haze_average_adc_dn_oblique: f64,
+                                  // lpm_haze_average_adc_dw1_oblique: f64,
+                                  // lpm_haze_average_adc_dw2_oblique: f64,
+                                  // lpm_max_adc: f64,
+                                  // lpm_max_adc_dn_oblique: f64,
+                                  // lpm_max_adc_dw1_oblique: f64,
+                                  // lpm_max_adc_dw2_oblique: f64,
+                                  // lpm_max_amplitude: f64,
+                                  // lpm_max_amplitude_dn_oblique: f64,
+                                  // lpm_max_amplitude_dw1_oblique: f64,
+                                  // lpm_max_amplitude_dw2_oblique: f64,
+                                  // lpm_max_amplitude_nppm: f64,
+                                  // lpm_max_amplitude_nppm_dn_oblique: f64,
+                                  // lpm_max_amplitude_nppm_dw1_oblique: f64,
+                                  // lpm_max_amplitude_nppm_dw2_oblique: f64,
+                                  // lpm_max_amplitude_rppm: f64,
+                                  // lpm_max_amplitude_rppm_dn_oblique: f64,
+                                  // lpm_max_amplitude_rppm_dw1_oblique: f64,
+                                  // lpm_max_amplitude_rppm_dw2_oblique: f64,
+                                  // lpm_max_snr: f64,
+                                  // lpm_max_snr_dn_oblique: f64,
+                                  // lpm_max_snr_dw1_oblique: f64,
+                                  // lpm_max_snr_dw2_oblique: f64,
+                                  // lpm_triggered_dn_oblique: i32,
+                                  // lpm_triggered_dw1_oblique: i32,
+                                  // lpm_triggered_dw2_oblique: i32,
+                                  // nppm_size: f64,
+                                  // nppm_size_dn_oblique: f64,
+                                  // nppm_size_dw1_oblique: f64,
+                                  // nppm_size_dw2_oblique: f64,
+                                  // position_r_centroid: f64,
+                                  // position_theta_centroid: f64,
+                                  // rppm_haze_average_dn_oblique: f64,
+                                  // rppm_haze_average_dw1_oblique: f64,
+                                  // rppm_haze_average_dw2_oblique: f64,
+                                  // rppm_size: f64,
+                                  // rppm_size_dn_oblique: f64,
+                                  // rppm_size_dw1_oblique: f64,
+                                  // rppm_size_dw2_oblique: f64,
+                                  // defect_size: f64,
+                                  // size_dn_oblique: f64,
+                                  // size_dn_oblique_to_size_dw1_oblique: f64,
+                                  // size_dn_oblique_to_size_dw2_oblique: f64,
+                                  // size_dw1_oblique: f64,
+                                  // size_dw1_oblique_to_size_dn_oblique: f64,
+                                  // size_dw1_oblique_to_size_dw2_oblique: f64,
+                                  // size_dw2_oblique: f64,
+                                  // size_dw2_oblique_to_size_dn_oblique: f64,
+                                  // size_dw2_oblique_to_size_dw1_oblique: f64,
+                                  // sn_ratio: f64,
+                                  // sn_ratio_dn_oblique: f64,
+                                  // sn_ratio_dw1_oblique: f64,
+                                  // sn_ratio_dw2_oblique: f64,
+                                  // area: f64,
+                                  // aspect_ratio: f64,
+                                  // position_box_r_end: f64,
+                                  // position_box_r_start: f64,
+                                  // position_box_theta_end: f64,
+                                  // position_box_theta_start: f64,
+                                  // length: f64,
+                                  // haze_average: f64,
+                                  // class_code: i32,
+                                  // column_index: i32,
+                                  // enc_energy: f64,
+                                  // index1: i32,
+                                  // index2: i32,
+                                  // lpm_haze_average_adc: f64,
+                                  // lpm_triggered: i32,
+                                  // row_index: i32,
+                                  // rppm_haze_average: f64,
+                                  // adc_size_pcc_oblique: f64,
+                                  // class_code_pcc_oblique: i32,
+                                  // column_index_pcc_oblique: i32,
+                                  // defect_size_neg_adc_pcc_oblique: f64,
+                                  // defect_size_pos_adc_pcc_oblique: f64,
+                                  // defect_size_she_pcc_oblique: f64,
+                                  // enc_energy_pcc_oblique: f64,
+                                  // haze_average_pcc_oblique: f64,
+                                  // index1_pcc_oblique: i32,
+                                  // index2_pcc_oblique: i32,
+                                  // lateral_extent_radial_neg_um_pcc_oblique: f64,
+                                  // lateral_extent_radial_pos_um_pcc_oblique: f64,
+                                  // lateral_extent_radial_um_pcc_oblique: f64,
+                                  // lateral_extent_tangential_neg_um_pcc_oblique: f64,
+                                  // lateral_extent_tangential_pos_um_pcc_oblique: f64,
+                                  // lateral_extent_tangential_um_pcc_oblique: f64,
+                                  // lpm_haze_average_adc_pcc_oblique: f64,
+                                  // lpm_max_adc_pcc_oblique: f64,
+                                  // lpm_max_amplitude_pcc_oblique: f64,
+                                  // lpm_max_amplitude_nppm_pcc_oblique: f64,
+                                  // lpm_max_amplitude_rppm_pcc_oblique: f64,
+                                  // lpm_max_snr_pcc_oblique: f64,
+                                  // lpm_triggered_pcc_oblique: i32,
+                                  // nppm_size_pcc_oblique: f64,
+                                  // pcc_adc_ratio_pcc_oblique: f64,
+                                  // pcc_bckgrnd_intensity_adc_pcc_oblique: f64,
+                                  // pcc_num_clustered_defects_pcc_oblique: i32,
+                                  // ppd_polarity: i32,
+                                  // polarity_pcc_oblique: i32,
+                                  // pos_and_neg_separation_radial_um_pcc_oblique: f64,
+                                  // pos_and_neg_separation_tangential_um_pcc_oblique: f64,
+                                  // rppm_haze_average_pcc_oblique: f64,
+                                  // rppm_size_pcc_oblique: f64,
+                                  // size_pcc_oblique: f64,
+                                  // sn_ratio_pcc_oblique: f64,
+                                  // xneg_pcc_oblique: f64,
+                                  // xpos_pcc_oblique: f64,
+                                  // yneg_pcc_oblique: f64,
+                                  // ypos_pcc_oblique: f64,
+                                  // defect_size_neg_adc: f64,
+                                  // defect_size_pos_adc: f64,
+                                  // defect_size_she: f64,
+                                  // lateral_extent_radial_neg_um: f64,
+                                  // lateral_extent_radial_pos_um: f64,
+                                  // lateral_extent_radial_um: f64,
+                                  // lateral_extent_tangential_neg_um: f64,
+                                  // lateral_extent_tangential_pos_um: f64,
+                                  // lateral_extent_tangential_um: f64,
+                                  // pcc_adc_ratio: f64,
+                                  // pcc_bckgrnd_intensity_adc: f64,
+                                  // pcc_num_clustered_defects: i32,
+                                  // pos_and_neg_separation_radial_um: f64,
+                                  // pos_and_neg_separation_tangential_um: f64,
+                                  // xneg: f64,
+                                  // xpos: f64,
+                                  // yneg: f64,
+                                  // ypos: f64,
+                                  // image_count: i32,
+                                  // image_list: String
 }
 
 #[pymethods]
@@ -416,26 +416,54 @@ impl KlarfData {
     /// Converts the KlarfData instance to a Python dictionary.
     fn to_py_dict(&self, py: Python<'_>) -> PyObject {
         let dict: Bound<PyDict> = PyDict::new_bound(py);
-        dict.set_item("file_version", self.file_version.clone()).unwrap();
-        dict.set_item("file_timestamp", self.file_timestamp.clone()).unwrap();
-        dict.set_item("inspection_station_id", self.inspection_station_id.clone()).unwrap();
-        dict.set_item("sample_type", self.sample_type.clone()).unwrap();
-        dict.set_item("result_timestamp", self.result_timestamp.clone()).unwrap();
+        dict.set_item("file_version", self.file_version.clone())
+            .unwrap();
+        dict.set_item("file_timestamp", self.file_timestamp.clone())
+            .unwrap();
+        dict.set_item("inspection_station_id", self.inspection_station_id.clone())
+            .unwrap();
+        dict.set_item("sample_type", self.sample_type.clone())
+            .unwrap();
+        dict.set_item("result_timestamp", self.result_timestamp.clone())
+            .unwrap();
         dict.set_item("lot_id", self.lot_id.clone()).unwrap();
-        dict.set_item("sample_size", self.sample_size.clone()).unwrap();
+        dict.set_item("sample_size", self.sample_size.clone())
+            .unwrap();
         dict.set_item("setup_id", self.setup_id.clone()).unwrap();
         dict.set_item("step_id", self.step_id.clone()).unwrap();
         dict.set_item("wafer_id", self.wafer_id.clone()).unwrap();
         dict.set_item("slot", self.slot).unwrap();
         dict.set_item("device_id", self.device_id.clone()).unwrap();
-        dict.set_item("sample_orientation_mark_type", self.sample_orientation_mark_type.clone()).unwrap();
-        dict.set_item("orientation_mark_location", self.orientation_mark_location.clone()).unwrap();
+        dict.set_item(
+            "sample_orientation_mark_type",
+            self.sample_orientation_mark_type.clone(),
+        )
+        .unwrap();
+        dict.set_item(
+            "orientation_mark_location",
+            self.orientation_mark_location.clone(),
+        )
+        .unwrap();
         dict.set_item("die_pitch", self.die_pitch.clone()).unwrap();
-        dict.set_item("die_origin", self.die_origin.clone()).unwrap();
-        dict.set_item("sample_center_location", self.sample_center_location.clone()).unwrap();
-        dict.set_item("orientation_instructions", self.orientation_instructions.clone()).unwrap();
-        dict.set_item("coordinates_mirrored", self.coordinates_mirrored.clone()).unwrap();
-        dict.set_item("inspection_orientation", self.inspection_orientation.clone()).unwrap();
+        dict.set_item("die_origin", self.die_origin.clone())
+            .unwrap();
+        dict.set_item(
+            "sample_center_location",
+            self.sample_center_location.clone(),
+        )
+        .unwrap();
+        dict.set_item(
+            "orientation_instructions",
+            self.orientation_instructions.clone(),
+        )
+        .unwrap();
+        dict.set_item("coordinates_mirrored", self.coordinates_mirrored.clone())
+            .unwrap();
+        dict.set_item(
+            "inspection_orientation",
+            self.inspection_orientation.clone(),
+        )
+        .unwrap();
         dict.into()
     }
 }
@@ -463,7 +491,7 @@ pub fn parse_defects(path: &str) -> PyResult<PyObject> {
             defect_dict.set_item("xrel", defect.xrel)?;
             defect_dict.set_item("yrel", defect.yrel)?;
             defect_dict.set_item("xindex", defect.xindex)?;
-            defect_dict.set_item("yindex", defect.yindex)?; 
+            defect_dict.set_item("yindex", defect.yindex)?;
             defect_dict.set_item("xsize", defect.xsize)?;
             defect_dict.set_item("ysize", defect.ysize)?;
             defect_dict.set_item("defect_area", defect.defect_area)?;
@@ -482,14 +510,14 @@ pub fn parse_defects(path: &str) -> PyResult<PyObject> {
             defect_dict.set_item("class_code_dw1_oblique", defect.class_code_dw1_oblique)?;
             defect_dict.set_item("class_code_dw2_oblique", defect.class_code_dw2_oblique)?;
             defect_dict.set_item("column_index_dn_oblique", defect.column_index_dn_oblique)?;
-            defect_dict.set_item("column_index_dw1_oblique", defect.column_index_dw1_oblique)?; 
+            defect_dict.set_item("column_index_dw1_oblique", defect.column_index_dw1_oblique)?;
             defect_dict.set_item("column_index_dw2_oblique", defect.column_index_dw2_oblique)?;
             defect_dict.set_item("enc_energy_dn_oblique", defect.enc_energy_dn_oblique)?;
             defect_dict.set_item("enc_energy_dw1_oblique", defect.enc_energy_dw1_oblique)?;
             defect_dict.set_item("enc_energy_dw2_oblique", defect.enc_energy_dw2_oblique)?;
             defect_dict.set_item("haze_average_dn_oblique", defect.haze_average_dn_oblique)?;
             defect_dict.set_item("haze_average_dw1_oblique", defect.haze_average_dw1_oblique)?;
-            defect_dict.set_item("haze_average_dw2_oblique", defect.haze_average_dw2_oblique)?; 
+            defect_dict.set_item("haze_average_dw2_oblique", defect.haze_average_dw2_oblique)?;
             defect_dict.set_item("index1_dn_oblique", defect.index1_dn_oblique)?;
             defect_dict.set_item("index1_dw1_oblique", defect.index1_dw1_oblique)?;
             defect_dict.set_item("index1_dw2_oblique", defect.index1_dw2_oblique)?;
@@ -570,7 +598,6 @@ pub fn parse_defect_records(path: &str) -> io::Result<Vec<DefectList>> {
                 records.push(record);
             }
         }
-
     }
 
     Ok(records)
@@ -603,48 +630,79 @@ fn parse_data(data: &mut KlarfData, key: String, value: String) {
             let filetimestamp = value.trim_end_matches(';').to_string();
             if is_datetime_valid(&filetimestamp) {
                 data.file_timestamp = filetimestamp
-            }
-            else{
+            } else {
                 println!("Invalid FileTimestamp: {}", filetimestamp);
             }
         }
         "InspectionStationID" => {
             let parts: Vec<&str> = value.split(' ').collect();
-            data.inspection_station_id = parts.iter().map(|s| s.trim_end_matches(';').trim_matches('"').to_string()).collect(); // Convert &str to String
+            data.inspection_station_id = parts
+                .iter()
+                .map(|s| s.trim_end_matches(';').trim_matches('"').to_string())
+                .collect(); // Convert &str to String
         }
         "SampleType" => data.sample_type = value.trim_end_matches(';').to_string(),
         "ResultTimestamp" => data.result_timestamp = value.trim_end_matches(';').to_string(),
         "LotID" => data.lot_id = value.trim_end_matches(';').trim_matches('"').to_string(),
         "SampleSize" => {
             let parts: Vec<&str> = value.split(' ').collect();
-            data.sample_size = parts.iter().filter_map(|s| s.trim_end_matches(';').parse().ok()).collect();
+            data.sample_size = parts
+                .iter()
+                .filter_map(|s| s.trim_end_matches(';').parse().ok())
+                .collect();
         }
         "DeviceID" => data.device_id = value.trim_end_matches(';').trim_matches('"').to_string(),
         "SetupID" => {
             let value = value.trim_end_matches(';');
             let parts: Vec<&str> = value.splitn(2, ' ').collect();
-            data.setup_id = parts.iter().map(|s| s.trim_end_matches(';').trim_matches('"').to_string()).collect(); // Convert &str to String
+            data.setup_id = parts
+                .iter()
+                .map(|s| s.trim_end_matches(';').trim_matches('"').to_string())
+                .collect(); // Convert &str to String
         }
         "StepID" => data.step_id = value.trim_end_matches(';').trim_matches('"').to_string(),
-        "SampleOrientationMarkType" => data.sample_orientation_mark_type = value.trim_end_matches(';').to_string(),
-        "OrientationMarkLocation" => data.orientation_mark_location = value.trim_end_matches(';').to_string(),
+        "SampleOrientationMarkType" => {
+            data.sample_orientation_mark_type = value.trim_end_matches(';').to_string()
+        }
+        "OrientationMarkLocation" => {
+            data.orientation_mark_location = value.trim_end_matches(';').to_string()
+        }
         "DiePitch" => {
             let parts: Vec<&str> = value.split(' ').collect();
-            data.die_pitch = parts.iter().filter_map(|s| s.trim_end_matches(';').parse().ok()).collect();
+            data.die_pitch = parts
+                .iter()
+                .filter_map(|s| s.trim_end_matches(';').parse().ok())
+                .collect();
         }
         "DieOrigin" => {
             let parts: Vec<&str> = value.split(' ').collect();
-            data.die_origin = parts.iter().filter_map(|s| s.trim_end_matches(';').parse().ok()).collect();
+            data.die_origin = parts
+                .iter()
+                .filter_map(|s| s.trim_end_matches(';').parse().ok())
+                .collect();
         }
         "WaferID" => data.wafer_id = value.to_string(),
         "Slot" => data.slot = value.trim_end_matches(';').parse().unwrap_or(0),
         "SampleCenterLocation" => {
             let parts: Vec<&str> = value.split(' ').collect();
-            data.sample_center_location = parts.iter().filter_map(|s| s.trim_end_matches(';').parse().ok()).collect();
+            data.sample_center_location = parts
+                .iter()
+                .filter_map(|s| s.trim_end_matches(';').parse().ok())
+                .collect();
         }
-        "OrientationInstructions" => data.orientation_instructions =  value.trim_end_matches(';').trim_matches('"').trim_end().to_string(),
-        "CoordinatesMirrored" => data.coordinates_mirrored = value.trim_end_matches(';').to_string(),
-        "InspectionOrientation" => data.inspection_orientation = value.trim_end_matches(';').to_string(),
+        "OrientationInstructions" => {
+            data.orientation_instructions = value
+                .trim_end_matches(';')
+                .trim_matches('"')
+                .trim_end()
+                .to_string()
+        }
+        "CoordinatesMirrored" => {
+            data.coordinates_mirrored = value.trim_end_matches(';').to_string()
+        }
+        "InspectionOrientation" => {
+            data.inspection_orientation = value.trim_end_matches(';').to_string()
+        }
         _ => {}
     }
 }
@@ -680,8 +738,8 @@ fn klarfrs(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::NamedTempFile;
     use std::io::Write;
+    use tempfile::NamedTempFile;
     #[test]
     fn test_is_datetime_valid() {
         assert!(is_datetime_valid("08-12-24 23:41:25"));
@@ -710,7 +768,7 @@ mod tests {
 
         let file_path = temp_file.path().to_str().unwrap();
         let result = parse_defect_records(file_path).unwrap();
-        assert!(result.is_empty()); 
+        assert!(result.is_empty());
     }
 
     #[test]
@@ -725,8 +783,8 @@ mod tests {
         let file_path = temp_file.path().to_str().unwrap();
         let result = parse_defect_records(file_path).unwrap();
 
-        assert_eq!(result.len(), 2); // Check if one defect record is parsed
-        
+        assert_eq!(result.len(), 2); // Check if two defect record are parsed
+
         let defectid_1 = &result[0];
         assert_eq!(defectid_1.defect_id, 1);
         assert_eq!(defectid_1.xrel, 12041.000);
