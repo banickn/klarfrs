@@ -5,11 +5,11 @@ on:
     tags:
       - 'v*'  # Only run on version tags (e.g., v1.0.0)
   workflow_dispatch:
+
 jobs:
   build:
     strategy:
       matrix:
-        #platform: [ubuntu-latest, macos-latest, windows-latest]
         platform: [ubuntu-latest]
         python-version: ['3.9', '3.10', '3.11']  # Specify Python versions
     runs-on: ${{ matrix.platform }}
@@ -17,59 +17,54 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      # Install Python
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
 
-      # Install Rust
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           override: true
 
-      # Install maturin
       - name: Install maturin
         run: pip install maturin
 
-      # Build the wheel using maturin
       - name: Build the package
         run: maturin build --release
 
-      # Upload wheels as artifacts
       - name: Upload wheels as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: wheels-${{ matrix.platform }}-py${{ matrix.python-version }}
           path: target/wheels/*.whl
 
-# New job to upload the package after all builds are complete
   publish:
     needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
 
-      # Download all built wheels from all jobs
-      #            for platform in ubuntu-latest macos-latest windows-latest; do
-      - name: Download all wheels for all Python versions
-        run: |
-          for version in 3.9 3.10 3.11; do
-            for platform in ubuntu-latest; do
-              echo "Downloading wheels for $platform and Python $version"
-              actions/download-artifact@v3 --name wheels-${platform}-py${version}
-            done
-          done
+      - name: Download wheels
+        uses: actions/download-artifact@v4
+        with:
+          path: ./downloaded_artifacts
 
-      # Install twine for uploading to PyPI
+      - name: List downloaded content
+        run: |
+          ls -R ./downloaded_artifacts
+
+      - name: Prepare wheel files
+        run: |
+          mkdir -p ./wheels
+          find ./downloaded_artifacts -name '*.whl' -exec cp {} ./wheels/ \;
+
       - name: Install twine
         run: pip install twine
 
-      # Upload all the wheels to PyPI
       - name: Publish to PyPI
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-        run: twine upload target/wheels/*.whl -p ${{ secrets.PYPI_API_TOKEN }}
+        run: twine upload ./wheels/*.whl
