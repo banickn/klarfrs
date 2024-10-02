@@ -13,9 +13,11 @@ pip install klarfrs
 
 ```python
 import klarfrs
-
-content: dict = klarfrs.parse(filename)
-print(content)
+filename: str = "klarf.001" #
+klarf_header: dict = klarfrs.parse(filename)
+klarf_defects: dict = klarfrs.parse_defects(filename)
+print(klarf_header)
+print(klarf_defects)
 ```
 
 ## Contributing
