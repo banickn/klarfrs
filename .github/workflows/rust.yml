@@ -49,4 +49,4 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         env:
           PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
-        run: maturin publish --release
+        run: maturin publish
