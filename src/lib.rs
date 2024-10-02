@@ -454,7 +454,7 @@ pub fn parse_defects(path: &str) -> PyResult<PyObject> {
     let defect_lists: Vec<DefectList> = parse_defect_records(path)
         .map_err(|e: io::Error| PyErr::new::<pyo3::exceptions::PyIOError, _>(e.to_string()))?;
 
-    /// Converts the DefectList instances to a Python list.
+    // Converts the DefectList instances to a Python list.
     Python::with_gil(|py| {
         let py_list = PyList::empty_bound(py);
         for defect in defect_lists {
@@ -519,15 +519,15 @@ pub fn parse_defect_records(path: &str) -> io::Result<Vec<DefectList>> {
             continue;
         }
 
-        /// Start to parse when "DefectList" is found.
+        // "DefectList" happens after the column description and before the table starts
         if line.starts_with("DefectList") {
             parse_list = true;
             continue;
         }
-        /// Parse when "DefectList" is found and the table is not empty.
+        // Parse when "DefectList" is found and the table is not empty.
         if parse_list {
             let fields: Vec<&str> = line.split_whitespace().collect();
-            if fields.len() > 50 {
+            if fields.len() > 37 {
                 let record = DefectList {
                     defect_id: fields[0].parse().unwrap(),
                     xrel: fields[1].parse().unwrap(),
@@ -658,6 +658,10 @@ pub fn parse_internal(path: &str) -> io::Result<KlarfData> {
 
     for line in reader.lines() {
         let line = line.unwrap();
+        // No need to parse the Defect List for the header information
+        if line.starts_with("DefectList") {
+            break;
+        }
         if let Some((key, value)) = parse_line(&line) {
             parse_data(&mut klarf_data, key, value);
         }
@@ -671,4 +675,65 @@ fn klarfrs(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(parse, m)?)?;
     m.add_function(wrap_pyfunction!(parse_defects, m)?)?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::NamedTempFile;
+    use std::io::Write;
+    #[test]
+    fn test_is_datetime_valid() {
+        assert!(is_datetime_valid("08-12-24 23:41:25"));
+        assert!(!is_datetime_valid("2024-01-15 10:30:00")); // Incorrect format
+        assert!(!is_datetime_valid("08-12-24")); // Missing time part
+    }
+
+    #[test]
+    fn test_parse_line_valid() {
+        let line = "FileVersion 1 2";
+        let result = parse_line(line);
+        assert_eq!(result, Some(("FileVersion".to_string(), "1 2".to_string())));
+    }
+
+    #[test]
+    fn test_parse_line_invalid() {
+        let line = "ThisLineHasNoSpace";
+        let result = parse_line(line);
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn test_parse_defect_records_empty() {
+        let temp_file = NamedTempFile::new().unwrap();
+        // Don't write DefectList records to the file
+
+        let file_path = temp_file.path().to_str().unwrap();
+        let result = parse_defect_records(file_path).unwrap();
+        assert!(result.is_empty()); 
+    }
+
+    #[test]
+    fn test_parse_defect_records_with_data() {
+        let mut temp_file = NamedTempFile::new().unwrap();
+        {
+            let file = temp_file.as_file_mut();
+            writeln!(file, "DefectList").unwrap();
+            writeln!(file, "1 12041.000 149816.184 0 0 0.000 0.000 0.000000 0.020 0 6 0 0 0 0 67.084091 13.767257 67.084091 -10.763492 0 0 0 1018.000000 1026.000000 1018.000000 1.000000 0.952043 0.664093 0.228342 0.018191 0.175617 0 2662 0 0 0 0 0.000000 0.000000 0.000000 0.000000 606.512512 606.510620 606.510620 29.489401 29.487518 29.489401 29.489401 0.062226 0.062225 0.062226 0.062226 0.001681 0.000000 0.000000 0.000000 0.003093 0.000000 0.000000 0.000000 2.241958 2.241876 2.241958 2.241958 0.000000 0.000000 0.000000 0.001841 0.000778 0.001841 0.000000 137.959122 180.076340 0.219439 0.019687 0.187926 0.003967 0.000897 0.003967 0.000000 0.020332 0.027163 1.335966 17.000000 0.020332 0.748522 17.000000 0.000000 16.000000 16.000000 31.520321 2.896732 31.520321 -2.680547 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0 0.000000 0.000000 0 0 0.000000 0.000000 0.000000 0.000000 0.000000 0 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0 0 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0 0").unwrap();
+            writeln!(file, "2 146023.921 112165.243 0 0 0.000 0.000 0.000000 0.020 0 7 0 0 0 0 67.084091 0.000000 0.000000 0.000000 0 0 0 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0 0 0 0 0 0 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 29.489401 0.000000 0.000000 0.000000 0.062226 0.000000 0.000000 0.000000 0.001681 0.000000 0.000000 0.000000 0.003093 0.000000 0.000000 0.000000 2.241958 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.001841 0.000000 0.000000 0.000000 137.959122 180.076340 0.000000 0.000000 0.000000 0.003967 0.000000 0.000000 0.000000 0.020332 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 31.520321 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.018191 0 1026.000000 0.952043 2662 0 606.510620 0.000000 3009.000000 0.019687 0.000000 0 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0 0 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0 0").unwrap();
+        }
+        let file_path = temp_file.path().to_str().unwrap();
+        let result = parse_defect_records(file_path).unwrap();
+
+        assert_eq!(result.len(), 2); // Check if one defect record is parsed
+        
+        let defectid_1 = &result[0];
+        assert_eq!(defectid_1.defect_id, 1);
+        assert_eq!(defectid_1.xrel, 12041.000);
+        assert_eq!(defectid_1.yrel, 149816.184);
+        let defectid_2 = &result[1];
+        assert_eq!(defectid_2.defect_id, 2);
+        assert_eq!(defectid_2.xrel, 146023.921);
+        assert_eq!(defectid_2.yrel, 112165.243);
+    }
 }
