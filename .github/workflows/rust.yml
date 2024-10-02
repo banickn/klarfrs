@@ -46,16 +46,24 @@ jobs:
 
 # New job to upload the package after all builds are complete
   publish:
+    strategy:
+      matrix:
+        platform: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ['3.9', '3.10', '3.11']  # Specify Python versions
     needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
 
       # Download all built wheels from all jobs
-      - name: Download all wheels
-        uses: actions/download-artifact@v3
-        with:
-          name: wheels-${{ matrix.platform }}-py${{ matrix.python-version }}
+      - name: Download all wheels for all Python versions
+        run: |
+          for version in 3.9 3.10 3.11; do
+            for platform in ubuntu-latest macos-latest windows-latest; do
+              echo "Downloading wheels for $platform and Python $version"
+              actions/download-artifact@v3 --name wheels-${platform}-py${version}
+            done
+          done
 
       # Install twine for uploading to PyPI
       - name: Install twine
