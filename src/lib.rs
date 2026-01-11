@@ -1,76 +1,134 @@
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyList};
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
 
 mod utils;
 
-#[pyclass]
-#[derive(Debug, PartialEq)]
+#[pyclass(get_all)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct KlarfData {
-    file_version: String,                 // Klarf file version.
-    file_timestamp: String,               // Klarf file timestamp.
-    inspection_station_id: Vec<String>,   // List of inspection station IDs.
-    sample_type: String,                  // Type of sample.
-    result_timestamp: String,             // Timestamp of the inspection result.
-    lot_id: String,                       // Lot ID.
-    sample_size: Vec<u32>,                // Sample size in x and y dimensions.
-    setup_id: Vec<String>,                // List of setup IDs.
-    step_id: String,                      // Step ID.
-    wafer_id: String,                     // Wafer ID.
-    slot: u32,                            // Slot number.
-    device_id: String,                    // Device ID.
-    sample_orientation_mark_type: String, // Type of sample orientation mark.
-    orientation_mark_location: String,    // Location of orientation mark.
-    die_pitch: Vec<f64>,                  // Die pitch in x and y dimensions.
-    die_origin: Vec<f64>,                 // Die origin in x and y coordinates.
-    sample_center_location: Vec<f64>,     // Sample center location in x and y coordinates.
-    orientation_instructions: String,     // Orientation instructions.
-    coordinates_mirrored: String,         // Whether the coordinates are mirrored.
-    inspection_orientation: String,       // Inspection orientation.
+    /// Klarf file version.
+    pub file_version: String,
+    /// Klarf file timestamp.
+    pub file_timestamp: String,
+    /// List of inspection station IDs.
+    pub inspection_station_id: Vec<String>,
+    /// Type of sample.
+    pub sample_type: String,
+    /// Timestamp of the inspection result.
+    pub result_timestamp: String,
+    /// Lot ID.
+    pub lot_id: String,
+    /// Sample size in x and y dimensions.
+    pub sample_size: Vec<u32>,
+    /// List of setup IDs.
+    pub setup_id: Vec<String>,
+    /// Step ID.
+    pub step_id: String,
+    /// Wafer ID.
+    pub wafer_id: String,
+    /// Slot number.
+    pub slot: u32,
+    /// Device ID.
+    pub device_id: String,
+    /// Type of sample orientation mark.
+    pub sample_orientation_mark_type: String,
+    /// Location of orientation mark.
+    pub orientation_mark_location: String,
+    /// Die pitch in x and y dimensions.
+    pub die_pitch: Vec<f64>,
+    /// Die origin in x and y coordinates.
+    pub die_origin: Vec<f64>,
+    /// Sample center location in x and y coordinates.
+    pub sample_center_location: Vec<f64>,
+    /// Orientation instructions.
+    pub orientation_instructions: String,
+    /// Whether the coordinates are mirrored.
+    pub coordinates_mirrored: String,
+    /// Inspection orientation.
+    pub inspection_orientation: String,
+    /// Defect record specification (columns).
+    pub defect_record_spec: String,
 }
 
-#[pyclass]
-#[derive(Debug, PartialEq)]
+#[pyclass(get_all)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct DefectList {
-    defect_id: i64,                // Unique identifier for the defect
-    xrel: f64,                     // X coordinate of the defect (relative to the wafer)
-    yrel: f64,                     // Y coordinate of the defect (relative to the wafer)
-    xindex: i32,                   // X index of the defect (related to die location on wafer)
-    yindex: i32,                   // Y index of the defect (related to die location on wafer)
-    xsize: f64,                    // Size of the defect in the X dimension
-    ysize: f64,                    // Size of the defect in the Y dimension
-    defect_area: f64,              // Area of the defect
-    dsize: f64,                    // Maximum dimension of the defect
-    class_number: i32,             // Defect classification number
-    test: i32,                     // Test condition or number
-    cluster_number: i32,           // Cluster number the defect belongs to
-    rough_bin_number: i32,         // Rough binning classification
-    fine_bin_number: i32,          // Fine binning classification
-    review_sample: i32,            // Flag indicating if the defect is a review sample
-    adc_size: f64,                 // Size from ADC measurement (unknown context)
-    adc_size_dn_oblique: f64,      // ADC size with specific illumination (downward normal oblique)
-    adc_size_dw1_oblique: f64,     // ADC size with specific illumination (downward 1 oblique)
-    adc_size_dw2_oblique: f64,     // ADC size with specific illumination (downward 2 oblique)
-    class_code_dn_oblique: i32, // Classification code with specific illumination (downward normal oblique)
-    class_code_dw1_oblique: i32, // Classification code with specific illumination (downward 1 oblique)
-    class_code_dw2_oblique: i32, // Classification code with specific illumination (downward 2 oblique)
-    column_index_dn_oblique: i32, // Column index with specific illumination (downward normal oblique)
-    column_index_dw1_oblique: i32, // Column index with specific illumination (downward 1 oblique)
-    column_index_dw2_oblique: i32, // Column index with specific illumination (downward 2 oblique)
-    enc_energy_dn_oblique: f64, // Encapsulated energy with specific illumination (downward normal oblique)
-    enc_energy_dw1_oblique: f64, // Encapsulated energy with specific illumination (downward 1 oblique)
-    enc_energy_dw2_oblique: f64, // Encapsulated energy with specific illumination (downward 2 oblique)
-    haze_average_dn_oblique: f64, // Haze average with specific illumination (downward normal oblique)
-    haze_average_dw1_oblique: f64, // Haze average with specific illumination (downward 1 oblique)
-    haze_average_dw2_oblique: f64, // Haze average with specific illumination (downward 2 oblique)
-    index1_dn_oblique: i32,       // Index 1 with specific illumination (downward normal oblique)
-    index1_dw1_oblique: i32,      // Index 1 with specific illumination (downward 1 oblique)
-    index1_dw2_oblique: i32,      // Index 1 with specific illumination (downward 2 oblique)
-    index2_dn_oblique: i32,       // Index 2 with specific illumination (downward normal oblique)
-    index2_dw1_oblique: i32,      // Index 2 with specific illumination (downward 1 oblique)
-    index2_dw2_oblique: i32,      // Index 2 with specific illumination (downward 2 oblique)
+    /// Unique identifier for the defect
+    pub defect_id: i64,
+    /// X coordinate of the defect (relative to the wafer)
+    pub xrel: f64,
+    /// Y coordinate of the defect (relative to the wafer)
+    pub yrel: f64,
+    /// X index of the defect (related to die location on wafer)
+    pub xindex: i32,
+    /// Y index of the defect (related to die location on wafer)
+    pub yindex: i32,
+    /// Size of the defect in the X dimension
+    pub xsize: f64,
+    /// Size of the defect in the Y dimension
+    pub ysize: f64,
+    /// Area of the defect
+    pub defect_area: f64,
+    /// Maximum dimension of the defect
+    pub dsize: f64,
+    /// Defect classification number
+    pub class_number: i32,
+    /// Test condition or number
+    pub test: i32,
+    /// Cluster number the defect belongs to
+    pub cluster_number: i32,
+    /// Rough binning classification
+    pub rough_bin_number: i32,
+    /// Fine binning classification
+    pub fine_bin_number: i32,
+    /// Flag indicating if the defect is a review sample
+    pub review_sample: i32,
+    /// Size from ADC measurement (unknown context)
+    pub adc_size: f64,
+    /// ADC size with specific illumination (downward normal oblique)
+    pub adc_size_dn_oblique: f64,
+    /// ADC size with specific illumination (downward 1 oblique)
+    pub adc_size_dw1_oblique: f64,
+    /// ADC size with specific illumination (downward 2 oblique)
+    pub adc_size_dw2_oblique: f64,
+    /// Classification code with specific illumination (downward normal oblique)
+    pub class_code_dn_oblique: i32,
+    /// Classification code with specific illumination (downward 1 oblique)
+    pub class_code_dw1_oblique: i32,
+    /// Classification code with specific illumination (downward 2 oblique)
+    pub class_code_dw2_oblique: i32,
+    /// Column index with specific illumination (downward normal oblique)
+    pub column_index_dn_oblique: i32,
+    /// Column index with specific illumination (downward 1 oblique)
+    pub column_index_dw1_oblique: i32,
+    /// Column index with specific illumination (downward 2 oblique)
+    pub column_index_dw2_oblique: i32,
+    /// Encapsulated energy with specific illumination (downward normal oblique)
+    pub enc_energy_dn_oblique: f64,
+    /// Encapsulated energy with specific illumination (downward 1 oblique)
+    pub enc_energy_dw1_oblique: f64,
+    /// Encapsulated energy with specific illumination (downward 2 oblique)
+    pub enc_energy_dw2_oblique: f64,
+    /// Haze average with specific illumination (downward normal oblique)
+    pub haze_average_dn_oblique: f64,
+    /// Haze average with specific illumination (downward 1 oblique)
+    pub haze_average_dw1_oblique: f64,
+    /// Haze average with specific illumination (downward 2 oblique)
+    pub haze_average_dw2_oblique: f64,
+    /// Index 1 with specific illumination (downward normal oblique)
+    pub index1_dn_oblique: i32,
+    /// Index 1 with specific illumination (downward 1 oblique)
+    pub index1_dw1_oblique: i32,
+    /// Index 1 with specific illumination (downward 2 oblique)
+    pub index1_dw2_oblique: i32,
+    /// Index 2 with specific illumination (downward normal oblique)
+    pub index2_dn_oblique: i32,
+    /// Index 2 with specific illumination (downward 1 oblique)
+    pub index2_dw1_oblique: i32,
+    /// Index 2 with specific illumination (downward 2 oblique)
+    pub index2_dw2_oblique: i32,
 }
 
 #[pymethods]
@@ -117,6 +175,68 @@ impl DefectList {
             index2_dw2_oblique: 0,
         }
     }
+    fn set_field(&mut self, key: &str, value: &str) {
+        match key {
+            "DEFECTID" => self.defect_id = value.parse().unwrap_or_default(),
+            "XREL" => self.xrel = value.parse().unwrap_or_default(),
+            "YREL" => self.yrel = value.parse().unwrap_or_default(),
+            "XINDEX" => self.xindex = value.parse().unwrap_or_default(),
+            "YINDEX" => self.yindex = value.parse().unwrap_or_default(),
+            "XSIZE" => self.xsize = value.parse().unwrap_or_default(),
+            "YSIZE" => self.ysize = value.parse().unwrap_or_default(),
+            "DEFECTAREA" => self.defect_area = value.parse().unwrap_or_default(),
+            "DSIZE" => self.dsize = value.parse().unwrap_or_default(),
+            "CLASSNUMBER" => self.class_number = value.parse().unwrap_or_default(),
+            "TEST" => self.test = value.parse().unwrap_or_default(),
+            "CLUSTERNUMBER" => self.cluster_number = value.parse().unwrap_or_default(),
+            "ROUGHBINNUMBER" => self.rough_bin_number = value.parse().unwrap_or_default(),
+            "FINEBINNUMBER" => self.fine_bin_number = value.parse().unwrap_or_default(),
+            "REVIEWSAMPLE" => self.review_sample = value.parse().unwrap_or_default(),
+            "ADCSIZE" => self.adc_size = value.parse().unwrap_or_default(),
+            "ADCSIZEDNOBLIQUE" => self.adc_size_dn_oblique = value.parse().unwrap_or_default(),
+            "ADCSIZEDW1OBLIQUE" => self.adc_size_dw1_oblique = value.parse().unwrap_or_default(),
+            "ADCSIZEDW2OBLIQUE" => self.adc_size_dw2_oblique = value.parse().unwrap_or_default(),
+            "CLASSCODEDNOBLIQUE" => self.class_code_dn_oblique = value.parse().unwrap_or_default(),
+            "CLASSCODEDW1OBLIQUE" => {
+                self.class_code_dw1_oblique = value.parse().unwrap_or_default()
+            }
+            "CLASSCODEDW2OBLIQUE" => {
+                self.class_code_dw2_oblique = value.parse().unwrap_or_default()
+            }
+            "COLUMNINDEXDNOBLIQUE" => {
+                self.column_index_dn_oblique = value.parse().unwrap_or_default()
+            }
+            "COLUMNINDEXDW1OBLIQUE" => {
+                self.column_index_dw1_oblique = value.parse().unwrap_or_default()
+            }
+            "COLUMNINDEXDW2OBLIQUE" => {
+                self.column_index_dw2_oblique = value.parse().unwrap_or_default()
+            }
+            "ENCENERGYDNOBLIQUE" => self.enc_energy_dn_oblique = value.parse().unwrap_or_default(),
+            "ENCENERGYDW1OBLIQUE" => {
+                self.enc_energy_dw1_oblique = value.parse().unwrap_or_default()
+            }
+            "ENCENERGYDW2OBLIQUE" => {
+                self.enc_energy_dw2_oblique = value.parse().unwrap_or_default()
+            }
+            "HAZEAVERAGEDNOBLIQUE" => {
+                self.haze_average_dn_oblique = value.parse().unwrap_or_default()
+            }
+            "HAZEAVERAGEDW1OBLIQUE" => {
+                self.haze_average_dw1_oblique = value.parse().unwrap_or_default()
+            }
+            "HAZEAVERAGEDW2OBLIQUE" => {
+                self.haze_average_dw2_oblique = value.parse().unwrap_or_default()
+            }
+            "INDEX1DNOBLIQUE" => self.index1_dn_oblique = value.parse().unwrap_or_default(),
+            "INDEX1DW1OBLIQUE" => self.index1_dw1_oblique = value.parse().unwrap_or_default(),
+            "INDEX1DW2OBLIQUE" => self.index1_dw2_oblique = value.parse().unwrap_or_default(),
+            "INDEX2DNOBLIQUE" => self.index2_dn_oblique = value.parse().unwrap_or_default(),
+            "INDEX2DW1OBLIQUE" => self.index2_dw1_oblique = value.parse().unwrap_or_default(),
+            "INDEX2DW2OBLIQUE" => self.index2_dw2_oblique = value.parse().unwrap_or_default(),
+            _ => {}
+        }
+    }
 }
 
 #[pymethods]
@@ -145,127 +265,23 @@ impl KlarfData {
             orientation_instructions: String::new(),
             coordinates_mirrored: String::new(),
             inspection_orientation: String::new(),
+            defect_record_spec: String::new(),
         }
-    }
-
-    /// Converts the KlarfData instance to a Python dictionary.
-    fn to_py_dict(&self, py: Python<'_>) -> PyObject {
-        let dict: Bound<PyDict> = PyDict::new_bound(py);
-        dict.set_item("file_version", self.file_version.clone())
-            .unwrap();
-        dict.set_item("file_timestamp", self.file_timestamp.clone())
-            .unwrap();
-        dict.set_item("inspection_station_id", self.inspection_station_id.clone())
-            .unwrap();
-        dict.set_item("sample_type", self.sample_type.clone())
-            .unwrap();
-        dict.set_item("result_timestamp", self.result_timestamp.clone())
-            .unwrap();
-        dict.set_item("lot_id", self.lot_id.clone()).unwrap();
-        dict.set_item("sample_size", self.sample_size.clone())
-            .unwrap();
-        dict.set_item("setup_id", self.setup_id.clone()).unwrap();
-        dict.set_item("step_id", self.step_id.clone()).unwrap();
-        dict.set_item("wafer_id", self.wafer_id.clone()).unwrap();
-        dict.set_item("slot", self.slot).unwrap();
-        dict.set_item("device_id", self.device_id.clone()).unwrap();
-        dict.set_item(
-            "sample_orientation_mark_type",
-            self.sample_orientation_mark_type.clone(),
-        )
-        .unwrap();
-        dict.set_item(
-            "orientation_mark_location",
-            self.orientation_mark_location.clone(),
-        )
-        .unwrap();
-        dict.set_item("die_pitch", self.die_pitch.clone()).unwrap();
-        dict.set_item("die_origin", self.die_origin.clone())
-            .unwrap();
-        dict.set_item(
-            "sample_center_location",
-            self.sample_center_location.clone(),
-        )
-        .unwrap();
-        dict.set_item(
-            "orientation_instructions",
-            self.orientation_instructions.clone(),
-        )
-        .unwrap();
-        dict.set_item("coordinates_mirrored", self.coordinates_mirrored.clone())
-            .unwrap();
-        dict.set_item(
-            "inspection_orientation",
-            self.inspection_orientation.clone(),
-        )
-        .unwrap();
-        dict.into()
     }
 }
 
 /// Parses a Klarf file and returns a KlarfData header information instance.
 #[pyfunction]
-pub fn parse(path: &str) -> PyResult<PyObject> {
-    let klarf_data: KlarfData = parse_internal(path)
-        .map_err(|e: io::Error| PyErr::new::<pyo3::exceptions::PyIOError, _>(e.to_string()))?;
-    Ok(Python::with_gil(|py: Python| klarf_data.to_py_dict(py)))
+pub fn parse(path: &str) -> PyResult<KlarfData> {
+    parse_internal(path)
+        .map_err(|e: io::Error| PyErr::new::<pyo3::exceptions::PyIOError, _>(e.to_string()))
 }
 
 /// Parses a Klarf file and returns a list of DefectList instances.
 #[pyfunction]
-pub fn parse_defects(path: &str) -> PyResult<PyObject> {
-    let defect_lists: Vec<DefectList> = parse_defect_records(path)
-        .map_err(|e: io::Error| PyErr::new::<pyo3::exceptions::PyIOError, _>(e.to_string()))?;
-
-    // Converts the DefectList instances to a Python list.
-    Python::with_gil(|py| {
-        let py_list = PyList::empty_bound(py);
-        for defect in defect_lists {
-            let defect_dict = PyDict::new_bound(py);
-            defect_dict.set_item("defect_id", defect.defect_id)?;
-            defect_dict.set_item("xrel", defect.xrel)?;
-            defect_dict.set_item("yrel", defect.yrel)?;
-            defect_dict.set_item("xindex", defect.xindex)?;
-            defect_dict.set_item("yindex", defect.yindex)?;
-            defect_dict.set_item("xsize", defect.xsize)?;
-            defect_dict.set_item("ysize", defect.ysize)?;
-            defect_dict.set_item("defect_area", defect.defect_area)?;
-            defect_dict.set_item("dsize", defect.dsize)?;
-            defect_dict.set_item("class_number", defect.class_number)?;
-            defect_dict.set_item("test", defect.test)?;
-            defect_dict.set_item("cluster_number", defect.cluster_number)?;
-            defect_dict.set_item("rough_bin_number", defect.rough_bin_number)?;
-            defect_dict.set_item("fine_bin_number", defect.fine_bin_number)?;
-            defect_dict.set_item("review_sample", defect.review_sample)?;
-            defect_dict.set_item("adc_size", defect.adc_size)?;
-            defect_dict.set_item("adc_size_dn_oblique", defect.adc_size_dn_oblique)?;
-            defect_dict.set_item("adc_size_dw1_oblique", defect.adc_size_dw1_oblique)?;
-            defect_dict.set_item("adc_size_dw2_oblique", defect.adc_size_dw2_oblique)?;
-            defect_dict.set_item("class_code_dn_oblique", defect.class_code_dn_oblique)?;
-            defect_dict.set_item("class_code_dw1_oblique", defect.class_code_dw1_oblique)?;
-            defect_dict.set_item("class_code_dw2_oblique", defect.class_code_dw2_oblique)?;
-            defect_dict.set_item("column_index_dn_oblique", defect.column_index_dn_oblique)?;
-            defect_dict.set_item("column_index_dw1_oblique", defect.column_index_dw1_oblique)?;
-            defect_dict.set_item("column_index_dw2_oblique", defect.column_index_dw2_oblique)?;
-            defect_dict.set_item("enc_energy_dn_oblique", defect.enc_energy_dn_oblique)?;
-            defect_dict.set_item("enc_energy_dw1_oblique", defect.enc_energy_dw1_oblique)?;
-            defect_dict.set_item("enc_energy_dw2_oblique", defect.enc_energy_dw2_oblique)?;
-            defect_dict.set_item("haze_average_dn_oblique", defect.haze_average_dn_oblique)?;
-            defect_dict.set_item("haze_average_dw1_oblique", defect.haze_average_dw1_oblique)?;
-            defect_dict.set_item("haze_average_dw2_oblique", defect.haze_average_dw2_oblique)?;
-            defect_dict.set_item("index1_dn_oblique", defect.index1_dn_oblique)?;
-            defect_dict.set_item("index1_dw1_oblique", defect.index1_dw1_oblique)?;
-            defect_dict.set_item("index1_dw2_oblique", defect.index1_dw2_oblique)?;
-            defect_dict.set_item("index2_dn_oblique", defect.index2_dn_oblique)?;
-            defect_dict.set_item("index2_dw1_oblique", defect.index2_dw1_oblique)?;
-            defect_dict.set_item("index2_dw2_oblique", defect.index2_dw2_oblique)?;
-
-            //dict.set_item("defects", defects_py_list)?;
-
-            py_list.append(defect_dict)?;
-        }
-        Ok(py_list.into())
-    })
+pub fn parse_defects(path: &str) -> PyResult<Vec<DefectList>> {
+    parse_defect_records(path)
+        .map_err(|e: io::Error| PyErr::new::<pyo3::exceptions::PyIOError, _>(e.to_string()))
 }
 
 /// Parses a Klarf file and returns a list of DefectList instances.
@@ -275,10 +291,70 @@ pub fn parse_defect_records(path: &str) -> io::Result<Vec<DefectList>> {
     let reader = io::BufReader::new(file);
     let mut parse_list = false;
     let mut records = Vec::new();
+
+    // Default column order based on legacy implementation
+    let mut column_specs: Vec<String> = vec![
+        "DEFECTID",
+        "XREL",
+        "YREL",
+        "XINDEX",
+        "YINDEX",
+        "XSIZE",
+        "YSIZE",
+        "DEFECTAREA",
+        "DSIZE",
+        "CLASSNUMBER",
+        "TEST",
+        "CLUSTERNUMBER",
+        "ROUGHBINNUMBER",
+        "FINEBINNUMBER",
+        "REVIEWSAMPLE",
+        "ADCSIZE",
+        "ADCSIZEDNOBLIQUE",
+        "ADCSIZEDW1OBLIQUE",
+        "ADCSIZEDW2OBLIQUE",
+        "CLASSCODEDNOBLIQUE",
+        "CLASSCODEDW1OBLIQUE",
+        "CLASSCODEDW2OBLIQUE",
+        "COLUMNINDEXDNOBLIQUE",
+        "COLUMNINDEXDW1OBLIQUE",
+        "COLUMNINDEXDW2OBLIQUE",
+        "ENCENERGYDNOBLIQUE",
+        "ENCENERGYDW1OBLIQUE",
+        "ENCENERGYDW2OBLIQUE",
+        "HAZEAVERAGEDNOBLIQUE",
+        "HAZEAVERAGEDW1OBLIQUE",
+        "HAZEAVERAGEDW2OBLIQUE",
+        "INDEX1DNOBLIQUE",
+        "INDEX1DW1OBLIQUE",
+        "INDEX1DW2OBLIQUE",
+        "INDEX2DNOBLIQUE",
+        "INDEX2DW1OBLIQUE",
+        "INDEX2DW2OBLIQUE",
+    ]
+    .into_iter()
+    .map(String::from)
+    .collect();
+
     for line in reader.lines() {
         let line = line?;
 
         if line.trim().is_empty() {
+            continue;
+        }
+
+        if line.starts_with("DefectRecordSpec") {
+            let _parts: Vec<&str> = line.split_whitespace().collect();
+            // Expected format: DefectRecordSpec "COL1 COL2 ...";
+            // Or: DefectRecordSpec COL1 COL2 ...;
+            // Let's handle the quoted string content if present
+            let content = line
+                .trim_start_matches("DefectRecordSpec")
+                .trim()
+                .trim_end_matches(';')
+                .trim_matches('"');
+
+            column_specs = content.split_whitespace().map(String::from).collect();
             continue;
         }
 
@@ -290,46 +366,14 @@ pub fn parse_defect_records(path: &str) -> io::Result<Vec<DefectList>> {
         // Parse when "DefectList" is found and the table is not empty.
         if parse_list {
             let fields: Vec<&str> = line.split_whitespace().collect();
-            if fields.len() > 37 {
-                let record = DefectList {
-                    defect_id: fields[0].parse().unwrap(),
-                    xrel: fields[1].parse().unwrap(),
-                    yrel: fields[2].parse().unwrap_or_default(),
-                    xindex: fields[3].parse().unwrap_or_default(),
-                    yindex: fields[4].parse().unwrap_or_default(),
-                    xsize: fields[5].parse().unwrap_or_default(),
-                    ysize: fields[6].parse().unwrap_or_default(),
-                    defect_area: fields[7].parse().unwrap_or_default(),
-                    dsize: fields[8].parse().unwrap_or_default(),
-                    class_number: fields[9].parse().unwrap_or_default(),
-                    test: fields[10].parse().unwrap_or_default(),
-                    cluster_number: fields[11].parse().unwrap_or_default(),
-                    rough_bin_number: fields[12].parse().unwrap_or_default(),
-                    fine_bin_number: fields[13].parse().unwrap_or_default(),
-                    review_sample: fields[14].parse().unwrap_or_default(),
-                    adc_size: fields[15].parse().unwrap_or_default(),
-                    adc_size_dn_oblique: fields[16].parse().unwrap_or_default(),
-                    adc_size_dw1_oblique: fields[17].parse().unwrap_or_default(),
-                    adc_size_dw2_oblique: fields[18].parse().unwrap_or_default(),
-                    class_code_dn_oblique: fields[19].parse().unwrap_or_default(),
-                    class_code_dw1_oblique: fields[20].parse().unwrap_or_default(),
-                    class_code_dw2_oblique: fields[21].parse().unwrap_or_default(),
-                    column_index_dn_oblique: fields[22].parse().unwrap_or_default(),
-                    column_index_dw1_oblique: fields[23].parse().unwrap_or_default(),
-                    column_index_dw2_oblique: fields[24].parse().unwrap_or_default(),
-                    enc_energy_dn_oblique: fields[25].parse().unwrap_or_default(),
-                    enc_energy_dw1_oblique: fields[26].parse().unwrap_or_default(),
-                    enc_energy_dw2_oblique: fields[27].parse().unwrap_or_default(),
-                    haze_average_dn_oblique: fields[28].parse().unwrap_or_default(),
-                    haze_average_dw1_oblique: fields[29].parse().unwrap_or_default(),
-                    haze_average_dw2_oblique: fields[30].parse().unwrap_or_default(),
-                    index1_dn_oblique: fields[31].parse().unwrap_or_default(),
-                    index1_dw1_oblique: fields[32].parse().unwrap_or_default(),
-                    index1_dw2_oblique: fields[33].parse().unwrap_or_default(),
-                    index2_dn_oblique: fields[34].parse().unwrap_or_default(),
-                    index2_dw1_oblique: fields[35].parse().unwrap_or_default(),
-                    index2_dw2_oblique: fields[36].parse().unwrap_or_default(),
-                };
+            // Basic validation: ensure we have columns to map to
+            if !fields.is_empty() {
+                let mut record = DefectList::new();
+                for (i, value) in fields.iter().enumerate() {
+                    if i < column_specs.len() {
+                        record.set_field(&column_specs[i], value);
+                    }
+                }
                 records.push(record);
             }
         }
@@ -431,6 +475,7 @@ fn parse_data(data: &mut KlarfData, key: String, value: String) {
         "InspectionOrientation" => {
             data.inspection_orientation = value.trim_end_matches(';').to_string()
         }
+        "DefectRecordSpec" => data.defect_record_spec = value.trim_end_matches(';').to_string(),
         _ => {}
     }
 }
@@ -443,7 +488,7 @@ pub fn parse_internal(path: &str) -> io::Result<KlarfData> {
     let mut klarf_data = KlarfData::new();
 
     for line in reader.lines() {
-        let line = line.unwrap();
+        let line = line?;
         // No need to parse the Defect List for the header information
         if line.starts_with("DefectList") {
             break;

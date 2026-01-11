@@ -10,23 +10,20 @@ jobs:
   build:
     strategy:
       matrix:
-        platform: [ubuntu-latest]
-        python-version: ['3.9', '3.10', '3.11']  # Specify Python versions
+        platform: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ['3.10', '3.11', '3.12', '3.13']
     runs-on: ${{ matrix.platform }}
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
 
       - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Install maturin
         run: pip install maturin
@@ -40,31 +37,44 @@ jobs:
           name: wheels-${{ matrix.platform }}-py${{ matrix.python-version }}
           path: target/wheels/*.whl
 
-  publish:
-    needs: build
+
+  sdist:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Build sdist
+        run: |
+          pip install maturin
+          maturin sdist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-sdist
+          path: target/wheels/*
 
-      - name: Download wheels
-        uses: actions/download-artifact@v4
+  publish:
+    needs: [build, sdist]
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
         with:
           path: ./downloaded_artifacts
 
-      - name: List downloaded content
+      - name: Prepare distribution files
         run: |
-          ls -R ./downloaded_artifacts
-
-      - name: Prepare wheel files
-        run: |
-          mkdir -p ./wheels
-          find ./downloaded_artifacts -name '*.whl' -exec cp {} ./wheels/ \;
-
-      - name: Install twine
-        run: pip install twine
+          mkdir -p ./dist
+          find ./downloaded_artifacts -name '*.whl' -exec cp {} ./dist/ \;
+          find ./downloaded_artifacts -name '*.tar.gz' -exec cp {} ./dist/ \;
+          ls -R ./dist
 
       - name: Publish to PyPI
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-        run: twine upload ./wheels/*.whl
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages_dir: ./dist
+          password: ${{ secrets.PYPI_API_TOKEN }}
